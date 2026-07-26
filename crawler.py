@@ -6,7 +6,7 @@ import time
 
 load_dotenv()
 
-KAKAO_REST_API_KEY = os.getenv("KAKAO_KEY")
+KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY")
 
 # ---------------------------------
 # 주소 -> 좌표 변환
