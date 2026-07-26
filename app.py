@@ -73,7 +73,7 @@ if random_button:
 if search_button:
     category = category.strip()
     
-    restaurants = recommend(category, time)
+    restaurants = recommend(category, time).head(5) # 상위 5개 음식점만 저장
     
     with result_area:
 
