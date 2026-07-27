@@ -4,7 +4,7 @@ import json
 import streamlit.components.v1 as components
 import os
 from dotenv import load_dotenv
-from recommend import recommend
+from recommend import recommend # recommend 파일에서 recommend 함수를 가져 옴.
 
 load_dotenv()
 
@@ -13,7 +13,16 @@ KAKAO_JS_KEY = os.getenv("KAKAO_JS_KEY")
 st.title("오늘 뭐 먹지?")
 
 random_button = st.button("아무거나")
-        
+
+position = st.selectbox(
+
+    "지금 위치에서 가장 가까운 곳",
+
+    ["정문", "후문", "한울관", "누리관", "광운대역"]
+
+)
+st.write(position)
+
 category = st.selectbox(
 
     "음식 종류",
@@ -21,14 +30,16 @@ category = st.selectbox(
     ["한식", "중식", "일식", "양식", "분식", "간식", "패스트푸드"]
 
 )
-        
 st.write(category)
 
-food = st.text_input("음식을 쓰세요")
-st.write(food)
+food = st.selectbox(
 
-cost = st.text_input("최대 예산(인당)")
-st.write(cost)
+    "음식 세분류",
+
+    ["치킨"]
+
+)
+st.write(food)
 
 time = st.selectbox(
 
@@ -40,6 +51,9 @@ time = st.selectbox(
 
 if time != 0:
     st.write(time)
+    
+cost = st.text_input("최대 예산(인당)")
+st.write(cost)
     
 search_button = st.button("추천 받기")
     
@@ -166,7 +180,7 @@ if random_button:
 if search_button:
     category = category.strip()
     
-    restaurants = recommend(category, time).head(5) # 상위 5개 음식점만 저장
+    restaurants = recommend(category, time, position).head(5) # 상위 5개 음식점만 저장
     
     json_restaurants = []
     

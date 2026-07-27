@@ -1,15 +1,147 @@
 import pandas as pd
+from datetime import datetime
 
 # CSV 읽기
 df = pd.read_csv(
-    "restaurants.csv"
+    "data/restaurants.csv"
 )
+
+def get_time_slot():    # 시간대 정의
+    hour = 12 # datetime.now().hour
+
+    if 5 <= hour < 10:
+        return "breakfast"
+
+    elif 10 <= hour < 14:
+        return "lunch"
+
+    elif 14 <= hour < 17:
+        return "dessert"
+
+    elif 17 <= hour < 21:
+        return "dinner"
+
+    else:
+        return "late"
+    
+TIME_KEYWORDS = {
+
+    "breakfast": {
+
+        "국": 3,
+
+        "죽": 5,
+
+        "김밥": 5,
+
+        "토스트": 5,
+
+        "샌드위치": 4
+
+    },
+
+    "lunch": {
+
+        "국밥": 5,
+
+        "백반": 5,
+
+        "국수": 5,
+
+        "돈까스": 5,
+
+        "덮밥": 4,
+
+        "찌개": 4,
+
+        "분식": 4,
+
+        "회": 2,
+
+        "고기": 2
+
+    },
+
+    "dessert": {
+
+        "카페": 5,
+
+        "디저트": 5,
+
+        "베이커리": 4,
+
+        "빙수": 5,
+
+        "아이스크림": 5
+
+    },
+
+    "dinner": {
+
+        "고기": 5,
+
+        "치킨": 5,
+
+        "족발": 5,
+
+        "회": 5,
+
+        "삼겹살": 5,
+
+        "술집": 4
+
+    },
+
+    "late": {
+
+        "치킨": 5,
+
+        "분식": 4,
+
+        "야식": 5,
+
+        "편의점": 3
+
+    }
+
+}
+
+def time_score(category):
+
+    slot = get_time_slot()
+    keyword_scores = TIME_KEYWORDS[slot]
+
+    print("현재 시간대:", slot)
+    print("카테고리:", category)
+
+    score = 0
+
+    for keyword, value in keyword_scores.items():
+        print(keyword, keyword in category)
+
+        if keyword in category:
+            score = max(score, value)
+
+    print("점수:", score)
+    print("----------------")
+
+    return score
 
 def recommend(
         category=None,
         time=0,
+        position="정문"
 ):
     result = df.copy()
+    
+    if position:
+        result = result[
+            result["university"]
+            .str.contains(
+                position,
+                na=False
+            )
+        ]
 
     # 음식 종류 필터
     if category:
@@ -32,13 +164,17 @@ def recommend(
         ]
 
     # 추천 점수 계산
+    
+    result["time_score"] = result["category"].apply(time_score)
 
     result["score"] = (
         (1 /
          (result["walk_time"]+1))
-        * 100
-        * 0.3
+        * 100 * 0.5
+        + 1 / (result["time_score"] + 1) * 100 * 0.5
     )
+    print(result[["name", "score"]].sort_values("score", ascending=False))
+    print(result["time_score"])
 
     return result.sort_values(
         "score",

@@ -43,6 +43,48 @@ def get_location(address):
         "lng": float(location["x"])
     }
     
+
+
+def get_school_location(address):
+
+    url = "https://dapi.kakao.com/v2/local/search/address.json"
+
+    headers = {
+
+        "Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"
+
+    }
+
+    params = {
+
+        "query": address
+
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code != 200:
+
+        raise Exception(f"API 오류: {response.status_code}")
+
+    result = response.json()
+
+    if len(result["documents"]) == 0:
+
+        return None
+
+    location = result["documents"][0]
+
+    return {
+
+        "lat": float(location["y"]),
+
+        "lng": float(location["x"]),
+
+        "address": location["address"]["address_name"]
+
+    }
+    
 def get_walk_time(start_lat, start_lng, end_lat, end_lng):
 
     url = "https://dapi.kakao.com/v2/routing/walk"
@@ -79,7 +121,7 @@ def get_walk_time(start_lat, start_lng, end_lat, end_lng):
 
     return data
 
-def add_walk(row, my_lat, my_lng):
+def add_walk(row, my_lat, my_lng):  # 도보 시간 API 하루에 1000번 제한
 
     result = get_walk_time(
         my_lat,
@@ -87,6 +129,8 @@ def add_walk(row, my_lat, my_lng):
         row["lat"],
         row["lng"]
     )
+    
+    print(result)
 
     if result["status"] != "OK":
         return None
@@ -114,64 +158,71 @@ def search_restaurants(
     }
 
     restaurants = []
+    
+    category_codes = {
+        "음식점": "FD6",
+        "카페": "CE7",
+        "편의점": "CS2"
+    }
+    
+    for category_name, code in category_codes.items():
+        # 최대 45페이지
+        for page in range(1, 4):
+            params = {
+                # 음식점
+                "category_group_code": code,
 
-    # 최대 45페이지
-    for page in range(1, 4):
-        params = {
-            # 음식점
-            "category_group_code": "FD6",
+                "x": lng,
+                "y": lat,
 
-            "x": lng,
-            "y": lat,
+                # 최대 1km
+                "radius": radius,
 
-            # 최대 1km
-            "radius": radius,
+                "page": page,
 
-            "page": page,
+                "size": 15
+            }
 
-            "size": 15
-        }
+            response = requests.get(
+                url,
+                headers=headers,
+                params=params
+            )
 
-        response = requests.get(
-            url,
-            headers=headers,
-            params=params
-        )
+            data = response.json()
 
-        data = response.json()
+            for item in data["documents"]:
 
-        for item in data["documents"]:
+                restaurants.append({
 
-            restaurants.append({
+                    "name":
+                    item["place_name"],
 
-                "name":
-                item["place_name"],
+                    "category":
+                    item["category_name"],
 
-                "category":
-                item["category_name"],
+                    "address":
+                    item["road_address_name"],
 
-                "address":
-                item["road_address_name"],
+                    "phone":
+                    item["phone"],
 
-                "phone":
-                item["phone"],
+                    "lat":
+                    item["y"],
 
-                "lat":
-                item["y"],
+                    "lng":
+                    item["x"],
 
-                "lng":
-                item["x"],
+                    "distance":
+                    int(item["distance"])   # 거리를 integer로 저장
 
-                "distance":
-                item["distance"]
+                })
+                
+            # 마지막 페이지면 종료
+            if data["meta"]["is_end"]:
+                break
 
-            })
-            
-        # 마지막 페이지면 종료
-        if data["meta"]["is_end"]:
-            break
-
-        time.sleep(0.1)
+            time.sleep(0.1)
         
     return restaurants
 
@@ -180,68 +231,96 @@ def search_restaurants(
 # ---------------------------------
 
 if __name__ == "__main__":
-    school = "광운대학교"
-
-    print("학교 좌표 검색")
-
-    location = get_location(school)
-
-    if location is None:
-
-        print("학교 위치를 찾을 수 없습니다.")
-        exit()
-
-    print(location)
-
-    print("음식점 검색")
+    restaurant_all = pd.DataFrame()
     
-    restaurants = search_restaurants(
-        location["lat"],
-        location["lng"],
-        radius=1000
-    )
-    # 격자 검색
-    offset = 0.005  # 약 500m
-    points = [
-        (location["lat"], location["lng"]),
-        (location["lat"]+offset, location["lng"]),
-        (location["lat"]-offset, location["lng"]),
-        (location["lat"], location["lng"]+offset),
-        (location["lat"], location["lng"]-offset),
-    ]
+    UNIVERSITIES = {
+        "정문(복지관)": "서울 노원구 광운로 20",
+        "후문": "서울 노원구 월계동 429-44", # 월계어린이공원
+        "한울관": "서울 노원구 광운로 27-38",
+        "누리관": "서울 노원구 광운로1길 60",
+        "광운대역": "서울특별시 노원구 석계로 98-2",
+    }
+    
+    for university, address in UNIVERSITIES.items():
+        print(f"{university} 수집 중...")
+        location = get_school_location(address)
 
-    for p in points:
-        restaurants.extend(
-            search_restaurants(
-                p[0],
-                p[1],
-                radius=1000
+        if location is None:
+            print("학교 위치를 찾을 수 없습니다.")
+            exit()
+
+        print(location)
+
+        print("음식점 검색")
+        
+        restaurants = search_restaurants(
+            location["lat"],
+            location["lng"],
+            radius=500
+        )
+        # 격자 검색
+        offset = 0.005  # 약 500m
+        points = [
+            (location["lat"], location["lng"]),
+            (location["lat"]+offset, location["lng"]),
+            (location["lat"]-offset, location["lng"]),
+            (location["lat"], location["lng"]+offset),
+            (location["lat"], location["lng"]-offset),
+        ]
+
+        for p in points:
+            restaurants.extend(
+                search_restaurants(
+                    p[0],
+                    p[1],
+                    radius=500
+                )
             )
+
+        print(
+            f"{len(restaurants)}개 음식점 발견"
         )
 
-    print(
-        f"{len(restaurants)}개 음식점 발견"
-    )
+        df = pd.DataFrame(restaurants)
+        
+        # 4. 학교 이름 컬럼 추가
+        df.insert(0, "university", university)
+        
+        df["walk_time"] = (df["distance"] / 4000 * 60).round().astype(int)  # API 호출하지 않고 도보 시간 계산, 보행 속도: 4km/h 가정
+        
+        # 5. 기존 DataFrame에 추가
 
-    df = pd.DataFrame(restaurants)
+        restaurant_all = pd.concat(
+            [
+                restaurant_all,
+                df
+            ],
+            ignore_index=True
+        )
+        print(
+            f"{university} 추가 완료 : {len(df)}개"
+        )
+        
+        """
+        df["walk_time"] = df.apply(
+        
+            lambda row: add_walk(
+            row,
+            location['lat'],
+            location['lng']
+        ), axis=1
+        )
+        """
+        
 
-    df.drop_duplicates( # 중복 제거 로직
-        subset=["name","address"],
+    restaurant_all.drop_duplicates( # 중복 제거 로직
+        subset=["university","name","address"],
         inplace=True
     )
     
-    df["walk_time"] = df.apply(
 
-        lambda row: add_walk(
-        row,
-        location['lat'],
-        location['lng']
-    ), axis=1
-    )
-    
-
-    df.to_csv(
-        "restaurants.csv",
+    restaurant_all.to_csv(
+        "data/restaurants.csv",
         index=False,
         encoding="utf-8-sig"
     )
