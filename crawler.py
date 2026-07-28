@@ -242,7 +242,7 @@ if __name__ == "__main__":
         "누리관": "서울 노원구 광운로1길 60",
         "광운대역": "서울특별시 노원구 석계로 98-2",
     }
-    WALK_SPEED = 80      # m/min
+    WALK_SPEED = 70      # m/min
     DETOUR_RATIO = 1.5  # 실제 도보거리 / 직선거리(허용계수)
     
     polygon = load_school_polygon(
@@ -316,12 +316,11 @@ if __name__ == "__main__":
         
         """
         df["walk_time"] = df.apply( # 도보 시간 계산 로직
-        
             lambda row: add_walk(
-            row,
-            location['lat'],
-            location['lng']
-        ), axis=1
+                row,
+                location['lat'],
+                location['lng']
+            ), axis=1
         )
         """
         

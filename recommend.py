@@ -1,4 +1,8 @@
 import pandas as pd
+import numpy as np
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
 
 # CSV 읽기
@@ -8,102 +12,63 @@ df = pd.read_csv(
 
 def get_time_slot():    # 시간대 정의
     hour = 12 # datetime.now().hour
-
-    if 5 <= hour < 10:
+    
+    if 6 <= hour < 10:
         return "breakfast"
-
-    elif 10 <= hour < 14:
+    elif 10 <= hour < 15:
         return "lunch"
-
-    elif 14 <= hour < 17:
+    elif 15 <= hour < 18:
         return "dessert"
-
-    elif 17 <= hour < 21:
+    elif 18 <= hour < 22:
         return "dinner"
-
     else:
         return "late"
     
 TIME_KEYWORDS = {
 
     "breakfast": {
-
         "국": 3,
-
         "죽": 5,
-
         "김밥": 5,
-
         "토스트": 5,
-
         "샌드위치": 4
-
     },
 
     "lunch": {
-
         "국밥": 5,
-
         "백반": 5,
-
         "국수": 5,
-
         "돈까스": 5,
-
         "덮밥": 4,
-
         "찌개": 4,
-
         "분식": 4,
-
         "회": 2,
-
         "고기": 2
-
     },
 
     "dessert": {
-
         "카페": 5,
-
         "디저트": 5,
-
         "베이커리": 4,
-
         "빙수": 5,
-
         "아이스크림": 5
-
     },
 
     "dinner": {
-
         "고기": 5,
-
         "치킨": 5,
-
         "족발": 5,
-
         "회": 5,
-
         "삼겹살": 5,
-
         "술집": 4
-
     },
 
     "late": {
-
         "치킨": 5,
-
         "분식": 4,
-
         "야식": 5,
-
         "편의점": 3
-
     }
-
 }
 
 def time_score(category):
@@ -181,6 +146,7 @@ def recommend(
         how="left"
     )
     
+    """
     result["price_score"] = result.apply(
         lambda x:
             price_score(
@@ -189,7 +155,9 @@ def recommend(
             ),
         axis=1
     )
+    """
     
+    # 위치 필터
     if position:
         result = result[
             result["university"]
@@ -219,43 +187,66 @@ def recommend(
             <= time
         ]
         
+    # -----------------------------------
+    # 예산 점수
+    # -----------------------------------
+    result["price_score"] = (
+        1 - result["avg_price"] / cost
+    ) * 100
+    print(result["avg_price"])
+    print(result["price_score"])
+        
+    # -----------------------------------
+    # 거리 점수
+    # -----------------------------------
+    result["distance_score"] = (
+        1 - result["distance"] / time
+    ) * 100
+
     result["time_score"] = result["category"].apply(time_score)
     
-    # 추천 점수 계산
-    result["score"] = (
-        (1 /
-         (result["walk_time"]+1))
-        * 100 * 0.4
-        + 1 / (result["time_score"] + 1) * 100 * 0.3
-        + result["price_score"] * 0.3
-    )
-    print(result[["name", "score"]].sort_values("score", ascending=False))
+    # -----------------------------------
+    # TF-IDF + 코사인 유사도
+    # -----------------------------------
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(result["category"])
+    user = vectorizer.transform([category])
+    sim = cosine_similarity(user, X)[0]
     
-    print(result["price_score"])
+    result["similarity"] = sim * 100
+    
+    # -----------------------------------
+    # 정규화
+    # -----------------------------------
+    scaler = MinMaxScaler()
+    result[[
+        "distance_score",
+        "price_score",
+        "time_score",
+        "similarity"
+    ]] = scaler.fit_transform(
+        result[[
+            "distance_score",
+            "price_score",
+            "time_score",
+            "similarity"
+        ]]
+    ) * 100
+
+    # -----------------------------------
+    # 최종 AI 점수
+    # -----------------------------------
+    result["score"] = (
+        0.30 * result["distance_score"]
+        + 0.15 * result["price_score"]
+        + 0.20 * result["time_score"]
+        + 0.35 * result["similarity"]
+    )
+    print(result[["name", "distance_score", "price_score", "time_score", "similarity", "score"]].sort_values(
+        "score", ascending=False).reset_index(drop=True))
 
     return result.sort_values(
         "score",
         ascending=False
     ).reset_index(drop=True) # 데이터프레임 인덱스 초기화
-
-
-# 실행
-
-recommend_result = recommend(
-
-    category="한식",
-
-    time=5
-
-)
-
-
-print(
-    recommend_result[
-        [
-            "name",
-            "category",
-            "distance"
-        ]
-    ]
-)
+    

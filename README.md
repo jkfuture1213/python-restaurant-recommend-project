@@ -42,7 +42,11 @@
 ---
 
 # 사용법
-1. 업데이트 예정
+1. 가상환경을 만들고 활성화합니다.
+2. `pip install -r requirements.txt` 실행해서 필요 패키지 설치   <!-- 영문 자판으로 바꾸고 백틱 안에 코드 입력 -->
+3. crawler.py를 실행해서 restaurant.csv를 생성합니다.
+4. menu_collector.py를 실행해서 restaurant_menu.csv를 생성합니다.
+5. `streamlit run app.py`를 실행하면 웹에서 작동됩니다.
 
 ---
 
