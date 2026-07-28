@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import requests
 import pandas as pd
 import time
+from utils.geo import load_school_polygon
+from utils.geo import filter_dataframe
 
 load_dotenv()
 
@@ -240,6 +242,13 @@ if __name__ == "__main__":
         "누리관": "서울 노원구 광운로1길 60",
         "광운대역": "서울특별시 노원구 석계로 98-2",
     }
+    WALK_SPEED = 80      # m/min
+    DETOUR_RATIO = 1.5  # 실제 도보거리 / 직선거리(허용계수)
+    
+    polygon = load_school_polygon(
+        "utils/restaurant_boundary.geojson",
+        "광운대학교"
+    )
     
     for university, address in UNIVERSITIES.items():
         print(f"{university} 수집 중...")
@@ -283,13 +292,17 @@ if __name__ == "__main__":
 
         df = pd.DataFrame(restaurants)
         
-        # 4. 학교 이름 컬럼 추가
+        # 학교 이름 컬럼 추가
         df.insert(0, "university", university)
         
-        df["walk_time"] = (df["distance"] / 4000 * 60).round().astype(int)  # API 호출하지 않고 도보 시간 계산, 보행 속도: 4km/h 가정
+        # API 호출하지 않고 도보 시간 계산, 추후에 광운대에 맞게 허용계수 조정
+        df["walk_distance"] = df["distance"] * DETOUR_RATIO
+        df["walk_time"] = (df["walk_distance"] / WALK_SPEED).round().astype(int)
         
-        # 5. 기존 DataFrame에 추가
-
+        # 일정 경계를 넘어가면 걸러내는 로직, 광운대역 기찻길 뒤쪽, 누리관 쪽 장위동에서 너무 멀리 나가지 않도록 거름.
+        df = filter_dataframe(df, polygon)
+        
+        # 기존 DataFrame에 추가
         restaurant_all = pd.concat(
             [
                 restaurant_all,
@@ -302,7 +315,7 @@ if __name__ == "__main__":
         )
         
         """
-        df["walk_time"] = df.apply(
+        df["walk_time"] = df.apply( # 도보 시간 계산 로직
         
             lambda row: add_walk(
             row,

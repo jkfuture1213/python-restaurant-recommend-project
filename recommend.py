@@ -132,6 +132,9 @@ def recommend(
         time=0,
         position="정문"
 ):
+    WALK_SPEED = 80      # m/min
+    DETOUR_RATIO = 1.35  # 실제 도보거리 / 직선거리
+    
     result = df.copy()
     
     if position:
@@ -162,11 +165,10 @@ def recommend(
             result["walk_time"]
             <= time
         ]
-
-    # 추천 점수 계산
-    
+        
     result["time_score"] = result["category"].apply(time_score)
-
+    
+    # 추천 점수 계산
     result["score"] = (
         (1 /
          (result["walk_time"]+1))
@@ -174,13 +176,11 @@ def recommend(
         + 1 / (result["time_score"] + 1) * 100 * 0.5
     )
     print(result[["name", "score"]].sort_values("score", ascending=False))
-    print(result["time_score"])
 
     return result.sort_values(
         "score",
         ascending=False
     ).reset_index(drop=True) # 데이터프레임 인덱스 초기화
-
 
 
 # 실행
