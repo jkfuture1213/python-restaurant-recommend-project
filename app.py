@@ -6,10 +6,10 @@ import os
 from dotenv import load_dotenv
 from recommend import recommend # recommend 파일에서 recommend 함수를 가져 옴.
 
-if "KAKAO_JS_KEY" in st.secrets:    # 배포를 위한 로직, 추천 음식점 위치를 띄움.
+try:    # 배포를 위한 로직, 추천 음식점 위치를 띄움.
     KAKAO_JS_KEY = st.secrets["KAKAO_JS_KEY"]
 
-else:   # 로컬 환경 변수에 있는 API KEY 이용
+except Exception:   # secrets 변수에 있는 API KEY 이용
     load_dotenv()
     KAKAO_JS_KEY = os.getenv("KAKAO_JS_KEY")
 
