@@ -18,44 +18,33 @@ st.title("오늘 뭐 먹지?")
 random_button = st.button("아무거나")
 
 position = st.selectbox(
-
     "지금 위치에서 가장 가까운 곳",
-
     ["정문", "후문", "한울관", "누리관", "광운대역"]
-
 )
 st.write(position)
 
 category = st.selectbox(
-
     "음식 종류",
-
     ["한식", "중식", "일식", "양식", "분식", "카페", "간식", "패스트푸드"]
-
 )
 st.write(category)
 
 food = st.selectbox(
-
     "음식 세분류",
-
     ["치킨"]
-
 )
 st.write(food)
 
 time = st.selectbox(
-
     "최대 소요 시간(분)",
-
     [2, 4, 6, 8, 10]
-
 )
-
-if time != 0:
-    st.write(time)
+st.write(time)
     
-cost = st.text_input("최대 예산(인당)")
+cost = st.selectbox(
+    "최대 예산(인당)",
+    [5000, 8000, 12000, 15000, 20000]
+)
 st.write(cost)
     
 search_button = st.button("추천 받기")
@@ -183,7 +172,7 @@ if random_button:
 if search_button:
     category = category.strip()
     
-    restaurants = recommend(category, time, position).head(5) # 상위 5개 음식점만 저장
+    restaurants = recommend(category, time, position, cost).head(5) # 상위 5개 음식점만 저장
     
     json_restaurants = []
     
