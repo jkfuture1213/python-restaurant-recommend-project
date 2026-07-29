@@ -74,7 +74,7 @@ if random_button:
     <html>
     <head>
     <meta charset="utf-8">
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false&libraries=services"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
     </head>
     
     <body>
@@ -185,7 +185,7 @@ if search_button:
     <html>
     <head>
     <meta charset="utf-8">
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false&libraries=services"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
     </head>
     
     <body>
