@@ -13,6 +13,8 @@ except Exception:   # secrets 변수에 있는 API KEY 이용
     load_dotenv()
     KAKAO_JS_KEY = os.getenv("KAKAO_JS_KEY")
 
+st.write(KAKAO_JS_KEY)
+
 st.title("오늘 뭐 먹지?")
 
 random_button = st.button("아무거나")
