@@ -81,7 +81,6 @@ if random_button:
     <div id="map" style="width:100%;height:500px;"></div>
     <script>
     var restaurants = {restaurant_json};
-    console.log(kakao);
     kakao.maps.load(function(){{
         var mapContainer = document.getElementById('map');
         var options = {{
@@ -162,6 +161,7 @@ if random_button:
             html,
             height=550
         )
+        st.write(html)
         
     
 if search_button:
