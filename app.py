@@ -62,7 +62,7 @@ if random_button:
     for _, row in restaurants.iterrows():
 
         json_restaurants.append({
-            "name": row["name"],
+            "name": str(row["name"]),
             "lat": row["lat"],
             "lng": row["lng"]
         })
@@ -70,55 +70,74 @@ if random_button:
     restaurant_json = json.dumps(json_restaurants, ensure_ascii=False)
     
     html = f"""
-
     <!DOCTYPE html>
-
     <html>
-
     <head>
-
     <meta charset="utf-8">
-
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
-
     </head>
-
+    
     <body>
-
-    <div id="map" style="width:100%;height:400px;"></div>
-
+    <div id="map" style="width:100%;height:500px;"></div>
     <script>
-
-    kakao.maps.load(function() {{
-
-        console.log("KAKAO READY");
-
-        var container = document.getElementById('map');
-
+    var restaurants = {restaurant_json};
+    kakao.maps.load(function(){{
+        console.log("Kakao SDK Loaded");
+        if (restaurants.length === 0) {{
+            document.getElementById("map").innerHTML = "추천 음식점 없음";
+            return;
+        }}
+        var mapContainer = document.getElementById('map');
         var options = {{
-
-            center: new kakao.maps.LatLng(37.5665,126.9780),
-
-            level:3
-
+            center: new kakao.maps.LatLng(
+                restaurants[0].lat,
+                restaurants[0].lng
+            ),
+            level: 4
         }};
 
         var map = new kakao.maps.Map(
-
-            container,
-
+            mapContainer,
             options
-
         );
-
+        
+        // 모든 음식점 표시
+        var bounds = new kakao.maps.LatLngBounds();
+        restaurants.forEach(function(r){{
+            var position =
+                new kakao.maps.LatLng(
+                    r.lat,
+                    r.lng
+                );
+        
+            var marker = new kakao.maps.Marker({{
+                map:map,
+                position:position
+            }});
+        
+            var info = new kakao.maps.InfoWindow({{
+                content:
+                "<div style='padding:10px'>"
+                + String(r.name).replace(/</g, "&lt;") +
+                "</div>"
+            }});
+        
+            kakao.maps.event.addListener(
+                marker,
+                'click',
+                function(){{
+                    info.open(map,marker);
+                }}
+            );
+            bounds.extend(position);
+        }});
+        
+        // 마커가 모두 보이도록 조정
+        map.setBounds(bounds);
     }});
 
     </script>
-
     </body>
-
-    </html>
-
     """
     
     with result_area:
@@ -159,7 +178,7 @@ if search_button:
     for _, row in restaurants.iterrows():
     
         json_restaurants.append({
-            "name": row["name"],
+            "name": str(row["name"]),
             "lat": row["lat"],
             "lng": row["lng"]
         })
@@ -215,7 +234,7 @@ if search_button:
             var info = new kakao.maps.InfoWindow({{
                 content:
                 "<div style='padding:10px'>"
-                + r.name +
+                + String(r.name).replace(/</g, "&lt;") +
                 "</div>"
             }});
         
