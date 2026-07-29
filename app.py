@@ -74,7 +74,7 @@ if random_button:
     <html>
     <head>
     <meta charset="utf-8">
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
     </head>
     
     <body>
@@ -82,6 +82,15 @@ if random_button:
     <script>
     var restaurants = {restaurant_json};
     kakao.maps.load(function(){{
+        console.log("Kakao SDK Loaded");
+
+        if (restaurants.length === 0) {{
+
+            document.getElementById("map").innerHTML = "추천 음식점 없음";
+
+            return;
+
+        }}
         var mapContainer = document.getElementById('map');
         var options = {{
             center: new kakao.maps.LatLng(
@@ -185,7 +194,7 @@ if search_button:
     <html>
     <head>
     <meta charset="utf-8">
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
     </head>
     
     <body>
