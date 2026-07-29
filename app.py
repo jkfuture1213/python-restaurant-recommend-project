@@ -155,7 +155,6 @@ if random_button:
                     st.subheader(restaurant["name"])
                     st.write(restaurant["category"])
                     st.write(f"도보 시간: {restaurant["walk_time"]}분")
-        st.write(html)
                     
     with result_map_area:
         components.html(
