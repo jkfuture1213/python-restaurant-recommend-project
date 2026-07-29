@@ -29,12 +29,6 @@ category = st.selectbox(
 )
 st.write(category)
 
-food = st.selectbox(
-    "음식 세분류",
-    ["치킨"]
-)
-st.write(food)
-
 time = st.selectbox(
     "최대 소요 시간(분)",
     [2, 4, 6, 8, 10]

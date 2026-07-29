@@ -76,20 +76,27 @@ def time_score(category):
     slot = get_time_slot()
     keyword_scores = TIME_KEYWORDS[slot]
 
+    """
+    # 디버깅용 코드
     print("현재 시간대:", slot)
     print("카테고리:", category)
+    """
 
     score = 0
 
     for keyword, value in keyword_scores.items():
-        print(keyword, keyword in category)
+        # 디버깅용 코드
+        # print(keyword, keyword in category)
 
         if keyword in category:
             score = max(score, value)
 
+    """
+    # 디버깅용 코드
     print("점수:", score)
     print("----------------")
-
+    """
+    
     return score
 
 def load_menu_price(menu_df):    # 음식점에 있는 메뉴 평균 가격 계산
@@ -125,12 +132,24 @@ def price_score(avg_price, budget): # 음식점별 예산에 맞는지 점수 �
     else:
         # 예산 초과는 강한 패널티
         return max(1 - ((avg_price-budget)/budget), 0)
+    
+def calculate_score(df):
+
+    df["score"] = (
+          0.30 * df["distance_score"]
+        + 0.15 * df["price_score"]
+        + 0.20 * df["time_score"]
+        + 0.35 * df["similarity"]
+    )
+
+    return df
 
 def recommend(
         category=None,
         time=0,
         position="정문",
-        cost=5000
+        cost=5000,
+        verbose=False    # 디버깅을 위한 출력 허용(False), 금지(True)
 ):
     WALK_SPEED = 80      # m/min
     DETOUR_RATIO = 1.35  # 실제 도보거리 / 직선거리
@@ -193,15 +212,16 @@ def recommend(
     result["price_score"] = (
         1 - result["avg_price"] / cost
     ) * 100
-    print(result["avg_price"])
-    print(result["price_score"])
         
     # -----------------------------------
     # 거리 점수
     # -----------------------------------
-    result["distance_score"] = (
-        1 - result["distance"] / time
-    ) * 100
+    if time > 0:
+        result["distance_score"] = (
+            1 - result["walk_time"] / time
+        ) * 100
+    else:
+        result["distance_score"] = 100
 
     result["time_score"] = result["category"].apply(time_score)
     
@@ -209,7 +229,10 @@ def recommend(
     # TF-IDF + 코사인 유사도
     # -----------------------------------
     vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(result["category"])
+    if result.empty:
+        return result
+    else: 
+        X = vectorizer.fit_transform(result["category"])
     user = vectorizer.transform([category])
     sim = cosine_similarity(user, X)[0]
     
@@ -236,17 +259,24 @@ def recommend(
     # -----------------------------------
     # 최종 AI 점수
     # -----------------------------------
-    result["score"] = (
-        0.30 * result["distance_score"]
-        + 0.15 * result["price_score"]
-        + 0.20 * result["time_score"]
-        + 0.35 * result["similarity"]
-    )
-    print(result[["name", "distance_score", "price_score", "time_score", "similarity", "score"]].sort_values(
-        "score", ascending=False).reset_index(drop=True))
+    result = calculate_score(result)
+    if verbose:
+        print(result[["name", "distance_score", "price_score", "time_score", "similarity", "score"]].sort_values(
+            "score", ascending=False).reset_index(drop=True))
 
-    return result.sort_values(
+    result = result.sort_values(
         "score",
         ascending=False
     ).reset_index(drop=True) # 데이터프레임 인덱스 초기화
+    
+    # 순위 추가
+    result["rank"] = result.index + 1
+    
+    # 메타데이터 추가
+    result["budget"] = cost
+    result["user_category"] = category
+    result["limit_time"] = time
+    result["position"] = position
+    
+    return result
     
