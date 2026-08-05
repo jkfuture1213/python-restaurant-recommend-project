@@ -39,14 +39,14 @@
 <img width="1350" height="776" alt="UI_2" src="https://github.com/user-attachments/assets/511a6a10-268e-486c-8dd5-24c3c8a91569" />
 
 ## 지도 표시
-<img width="1350" height="668" alt="UI_3" src="https://github.com/user-attachments/assets/f58fa8ad-b7d8-4ac0-a7b6-0d9e3692e853" />
+<img width="1349" height="800" alt="UI_fix_1" src="https://github.com/user-attachments/assets/d80b670f-c191-4323-914d-ec674dcb62ff" />
 
 ---
 
 # 사용법
 
 ### 바로 접속
-사이트 URL
+[사이트 URL](https://jkfuture1213-python-restaurant-recommend-project-app-ljigty.streamlit.app)
 
 ### 로컬 실행
 1. 가상환경을 만들고 활성화합니다.
@@ -64,7 +64,7 @@
 
 ## 지도 표시 기능
 - 추천 음식점의 위치를 지도 위에 마커로 표시
-- 오류 수정 중
+- Leaflet + OpenStreetMap 이용
 
 ---
 
@@ -77,6 +77,7 @@
 | Database | CSV |
 | Version Control | Git & GitHub |
 | Smart Analysis | Self AI Model |
+| Map API | Leaflet + OpenStreetMap |
 
 ---
 
