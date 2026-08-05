@@ -5,6 +5,8 @@ import streamlit.components.v1 as components
 import os
 from dotenv import load_dotenv
 from recommend import recommend # recommend 파일에서 recommend 함수를 가져 옴.
+import folium
+from streamlit_folium import st_folium
 
 try:    # 배포를 위한 로직, 추천 음식점 위치를 띄움.
     KAKAO_JS_KEY = st.secrets["KAKAO_JS_KEY"]
@@ -12,6 +14,10 @@ try:    # 배포를 위한 로직, 추천 음식점 위치를 띄움.
 except Exception:   # secrets 변수에 있는 API KEY 이용
     load_dotenv()
     KAKAO_JS_KEY = os.getenv("KAKAO_JS_KEY")
+
+# session_state 초기화
+if "restaurants" not in st.session_state:
+    st.session_state.restaurants = None
 
 st.title("오늘 뭐 먹지?")
 
@@ -42,7 +48,6 @@ cost = st.selectbox(
 st.write(cost)
     
 search_button = st.button("추천 받기")
-    
         
 st.divider()
 
@@ -54,231 +59,54 @@ st.subheader("📍 추천 음식점 위치")
 
 result_map_area = st.container()
 
+# 버튼 클릭 시 session_state에 결과 저장
 if random_button:
-    restaurants = recommend("아무거나")
-    
-    json_restaurants = []
+    st.session_state.restaurants = recommend("아무거나")
 
-    for _, row in restaurants.iterrows():
-
-        json_restaurants.append({
-            "name": str(row["name"]),
-            "lat": row["lat"],
-            "lng": row["lng"]
-        })
-
-    restaurant_json = json.dumps(json_restaurants, ensure_ascii=False)
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="utf-8">
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
-    </head>
-    
-    <body>
-    <div id="map" style="width:100%;height:500px;"></div>
-    <script>
-    var restaurants = {restaurant_json};
-    kakao.maps.load(function(){{
-        console.log("Kakao SDK Loaded");
-        if (restaurants.length === 0) {{
-            document.getElementById("map").innerHTML = "추천 음식점 없음";
-            return;
-        }}
-        var mapContainer = document.getElementById('map');
-        var options = {{
-            center: new kakao.maps.LatLng(
-                restaurants[0].lat,
-                restaurants[0].lng
-            ),
-            level: 4
-        }};
-
-        var map = new kakao.maps.Map(
-            mapContainer,
-            options
-        );
-        
-        // 모든 음식점 표시
-        var bounds = new kakao.maps.LatLngBounds();
-        restaurants.forEach(function(r){{
-            var position =
-                new kakao.maps.LatLng(
-                    r.lat,
-                    r.lng
-                );
-        
-            var marker = new kakao.maps.Marker({{
-                map:map,
-                position:position
-            }});
-        
-            var info = new kakao.maps.InfoWindow({{
-                content:
-                "<div style='padding:10px'>"
-                + String(r.name).replace(/</g, "&lt;") +
-                "</div>"
-            }});
-        
-            kakao.maps.event.addListener(
-                marker,
-                'click',
-                function(){{
-                    info.open(map,marker);
-                }}
-            );
-            bounds.extend(position);
-        }});
-        
-        // 마커가 모두 보이도록 조정
-        map.setBounds(bounds);
-    }});
-
-    </script>
-    </body>
-    """
-    
-    with result_area:
-        
-        medals = ["🥇", "🥈", "🥉"]
-
-        for i, restaurant in restaurants.iterrows():
-
-            with st.container(border=True):
-
-                col1, col2 = st.columns([1, 5])
-
-                with col1:
-                    if i < len(medals):
-                        st.markdown(f"# {medals[i]}")
-                    else:
-                        st.markdown(f"# {i+1}")
-
-                with col2:
-                    st.subheader(restaurant["name"])
-                    st.write(restaurant["category"])
-                    st.write(f"도보 시간: {restaurant["walk_time"]}분")
-                    
-    with result_map_area:
-        components.html(
-            html,
-            height=550
-        )
-        
-    
 if search_button:
-    category = category.strip()
-    
-    restaurants = recommend(category, time, position, cost).head(5) # 상위 5개 음식점만 저장
-    
-    json_restaurants = []
-    
-    for _, row in restaurants.iterrows():
-    
-        json_restaurants.append({
-            "name": str(row["name"]),
-            "lat": row["lat"],
-            "lng": row["lng"]
-        })
-    
-    restaurant_json = json.dumps(json_restaurants, ensure_ascii=False)
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="utf-8">
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}&autoload=false"></script>
-    </head>
-    
-    <body>
-    <div id="map" style="width:100%;height:500px;"></div>
-    <script>
-    var restaurants = {restaurant_json};
-    kakao.maps.load(function(){{
-        console.log("Kakao SDK Loaded");
-        if (restaurants.length === 0) {{
-            document.getElementById("map").innerHTML = "추천 음식점 없음";
-            return;
-        }}
-        var mapContainer = document.getElementById('map');
-        var options = {{
-            center: new kakao.maps.LatLng(
-                restaurants[0].lat,
-                restaurants[0].lng
-            ),
-            level: 4
-        }};
-    
-        var map = new kakao.maps.Map(
-            mapContainer,
-            options
-        );
-        
-        // 모든 음식점 표시
-        var bounds = new kakao.maps.LatLngBounds();
-        restaurants.forEach(function(r){{
-            var position =
-                new kakao.maps.LatLng(
-                    r.lat,
-                    r.lng
-                );
-        
-            var marker = new kakao.maps.Marker({{
-                map:map,
-                position:position
-            }});
-        
-            var info = new kakao.maps.InfoWindow({{
-                content:
-                "<div style='padding:10px'>"
-                + String(r.name).replace(/</g, "&lt;") +
-                "</div>"
-            }});
-        
-            kakao.maps.event.addListener(
-                marker,
-                'click',
-                function(){{
-                    info.open(map,marker);
-                }}
-            );
-            bounds.extend(position);
-        }});
-        
-        // 마커가 모두 보이도록 조정
-        map.setBounds(bounds);
-    }});
-    
-    </script>
-    </body>
-    """
-    
+    result = recommend(category.strip(), time, position, cost)
+    if result.empty:
+        st.warning("조건에 맞는 음식점이 없습니다. 시간이나 예산을 늘려보세요.")
+        st.session_state.restaurants = None
+    else:
+        st.session_state.restaurants = result.head(5)
+
+# session_state에 결과가 있으면 항상 표시
+if st.session_state.restaurants is not None:
+    restaurants = st.session_state.restaurants
+    medals = ["🥇", "🥈", "🥉"]
+
     with result_area:
-
-        medals = ["🥇", "🥈", "🥉"]
-
-        for i, restaurant in restaurants.iterrows():
-
+        for rank, (_, restaurant) in enumerate(restaurants.iterrows()):
             with st.container(border=True):
-
                 col1, col2 = st.columns([1, 5])
 
                 with col1:
-                    if i < len(medals):
-                        st.markdown(f"# {medals[i]}")
+                    if rank < len(medals):
+                        st.markdown(f"# {medals[rank]}")
                     else:
-                        st.markdown(f"# {i+1}")
+                        st.markdown(f"# {rank+1}")
 
                 with col2:
                     st.subheader(restaurant["name"])
                     st.write(restaurant["category"])
-                    st.write(f"도보 시간: {restaurant["walk_time"]}분")
-                    
+                    st.write(f"도보 시간: {restaurant['walk_time']}분")
+
     with result_map_area:
-        components.html(
-            html,
-            height=550
+        first_lat = restaurants.iloc[0]["lat"]
+        first_lng = restaurants.iloc[0]["lng"]
+
+        m = folium.Map(
+            location=[first_lat, first_lng],
+            zoom_start=16
         )
+
+        for rank, (_, row) in enumerate(restaurants.iterrows()):
+            medal = medals[rank] if rank < len(medals) else f"{rank+1}위"
+            folium.Marker(
+                location=[row["lat"], row["lng"]],
+                popup=folium.Popup(f"{medal} {row['name']}", max_width=200),
+                tooltip=row["name"]
+            ).add_to(m)
+
+        st_folium(m, use_container_width=True)
