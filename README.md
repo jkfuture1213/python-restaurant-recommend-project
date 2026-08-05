@@ -46,7 +46,7 @@
 # 사용법
 
 ### 바로 접속
-[사이트 URL](https://jkfuture1213-python-restaurant-recommend-project-app-ljigty.streamlit.app)
+https://jkfuture1213-python-restaurant-recommend-project-app-ljigty.streamlit.app
 
 ### 로컬 실행
 1. 가상환경을 만들고 활성화합니다.
