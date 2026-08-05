@@ -8,6 +8,19 @@ from recommend import recommend # recommend 파일에서 recommend 함수를 가
 import folium
 from streamlit_folium import st_folium
 
+# 지도 높이를 화면 크기에 맞게 조절하는 반응형 CSS
+st.markdown("""
+<style>
+/* st_folium이 생성하는 iframe을 반응형으로 만들기 */
+iframe[title="streamlit_folium.st_folium"] {
+    width: 100% !important;
+    height: clamp(250px, 56vw, 500px) !important;
+    min-height: 250px;
+    max-height: 500px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 try:    # 배포를 위한 로직, 추천 음식점 위치를 띄움.
     KAKAO_JS_KEY = st.secrets["KAKAO_JS_KEY"]
 
@@ -109,4 +122,4 @@ if st.session_state.restaurants is not None:
                 tooltip=row["name"]
             ).add_to(m)
 
-        st_folium(m, use_container_width=True)
+        st_folium(m, use_container_width=True, height=400)
